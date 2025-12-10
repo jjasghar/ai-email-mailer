@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}{% if original_campaign %}Copy Campaign{% else %}Create Campaign{% endif %} - AI Email Mailer{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{% if original_campaign %}Copy Campaign{% else %}Create New Campaign{% endif %}</h1>
+
+<div class="card">
+    <div class="card-body">
+        <p class="card-text">{% if original_campaign %}Copy campaign settings and select new recipients.{% else %}Create a campaign that will send unique AI-rewritten emails to each recipient based on your seed email.{% endif %}</p>
+        
+        <form method="post" class="mt-4">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="title" class="form-label">Campaign Title</label>
+                <input type="text" class="form-control" id="title" name="title" value="{% if original_campaign %}Copy of {{ original_campaign.title }}{% endif %}" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="subject" class="form-label">Email Subject</label>
+                <input type="text" class="form-control" id="subject" name="subject" value="{% if original_campaign %}{{ original_campaign.subject }}{% endif %}" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="seed_email" class="form-label">Seed Email</label>
+                <select class="form-select" id="seed_email" name="seed_email" required onchange="loadVariables()">
+                    <option value="">Select a seed email...</option>
+                    {% for seed in seeds %}
+                    <option value="{{ seed.pk }}" {% if selected_seed_id == seed.pk|stringformat:"s" %}selected{% endif %}>{{ seed.title }}</option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">The seed email that will be rewritten by Ollama for each recipient</div>
+            </div>
+            
+            {% if detected_variables %}
+            <div class="mb-3 alert alert-info">
+                <strong>Variables Detected:</strong> The following variables were found in your seed email. Please configure how they should be filled.
+            </div>
+            <div class="mb-3" id="variables-section">
+                <label class="form-label">Variable Mappings</label>
+                {% for var in detected_variables %}
+                <div class="mb-2">
+                    <label for="var_{{ var }}" class="form-label small">{{ var }}</label>
+                    <div class="input-group input-group-sm">
+                        <select class="form-select" id="var_{{ var }}" name="var_{{ var }}" data-var-name="{{ var }}">
+                            <option value="">-- Select mapping --</option>
+                            <option value="recipient.name">Recipient Name</option>
+                            <option value="recipient.company">Recipient Company</option>
+                            <option value="recipient.phone">Recipient Phone</option>
+                            <option value="recipient.email">Recipient Email</option>
+                            <option value="__custom__">Custom Value</option>
+                        </select>
+                    </div>
+                    <input type="text" class="form-control form-control-sm mt-1 d-none" id="var_{{ var }}_custom" name="var_{{ var }}_custom" placeholder="Enter custom value">
+                </div>
+                {% endfor %}
+                <div class="form-text">Select a recipient field or enter a custom value for each variable</div>
+            </div>
+            {% endif %}
+            
+            <div class="mb-3">
+                <label for="template" class="form-label">Email Template (Optional)</label>
+                <select class="form-select" id="template" name="template">
+                    <option value="">No Template</option>
+                    {% for template in templates %}
+                    <option value="{{ template.pk }}" {% if original_campaign and original_campaign.template and original_campaign.template.pk == template.pk %}selected{% endif %}>{{ template.name }}{% if template.is_default %} (Default){% endif %}</option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">HTML template with header and footer</div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="ai_prompt" class="form-label">Additional AI Prompt (Optional)</label>
+                <textarea class="form-control" id="ai_prompt" name="ai_prompt" rows="3" placeholder="E.g., Make it more casual, focus on benefits, use a friendly tone">{% if original_campaign %}{{ original_campaign.ai_prompt }}{% endif %}</textarea>
+                <div class="form-text">Additional instructions for Ollama when rewriting the email</div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Recipients</label>
+                <div class="mb-2">
+                    <input type="text" class="form-control" id="recipient-search" placeholder="Search by name, company, or email domain...">
+                </div>
+                <div class="mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="select-all-recipients">
+                        <label class="form-check-label" for="select-all-recipients">
+                            <strong>Select All</strong>
+                        </label>
+                    </div>
+                </div>
+                <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;" id="recipients-container">
+                    {% for recipient in recipients %}
+                    <div class="form-check recipient-item" 
+                         data-email="{{ recipient.email|lower }}" 
+                         data-name="{{ recipient.name|lower|default:'' }}" 
+                         data-company="{{ recipient.company|lower|default:'' }}">
+                        <input class="form-check-input recipient-checkbox" type="checkbox" name="recipients" value="{{ recipient.pk }}" id="recipient_{{ recipient.pk }}" {% if original_campaign and recipient in original_campaign.recipients.all %}checked{% endif %}>
+                        <label class="form-check-label" for="recipient_{{ recipient.pk }}">
+                            {{ recipient.email }}{% if recipient.name %} ({{ recipient.name }}){% endif %}{% if recipient.company %} - {{ recipient.company }}{% endif %}
+                        </label>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No recipients available. <a href="{% url 'recipient_add' %}">Add recipients first</a>.</p>
+                    {% endfor %}
+                </div>
+                <div class="form-text mt-2">
+                    <span id="recipient-count">{{ recipients|length }}</span> recipient(s) available
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">{% if original_campaign %}Copy Campaign{% else %}Create Campaign{% endif %}</button>
+                <a href="{% if original_campaign %}{% url 'campaign_detail' original_campaign.pk %}{% else %}{% url 'campaign_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function loadVariables() {
+    const seedEmailId = document.getElementById('seed_email').value;
+    if (seedEmailId) {
+        window.location.href = '?seed_email=' + seedEmailId;
+    } else {
+        window.location.href = '{% url "campaign_create" %}';
+    }
+}
+
+// Handle custom value inputs
+document.addEventListener('DOMContentLoaded', function() {
+    const selects = document.querySelectorAll('[id^="var_"]:not([id$="_custom"])');
+    selects.forEach(select => {
+        select.addEventListener('change', function() {
+            const varName = this.id.replace('var_', '');
+            const customInput = document.getElementById('var_' + varName + '_custom');
+            if (this.value === '__custom__') {
+                customInput.classList.remove('d-none');
+                customInput.required = true;
+            } else {
+                customInput.classList.add('d-none');
+                customInput.required = false;
+                customInput.value = '';
+            }
+        });
+    });
+    
+    // Recipient search functionality
+    const searchInput = document.getElementById('recipient-search');
+    const selectAllCheckbox = document.getElementById('select-all-recipients');
+    const recipientCheckboxes = document.querySelectorAll('.recipient-checkbox');
+    const recipientItems = document.querySelectorAll('.recipient-item');
+    const recipientCount = document.getElementById('recipient-count');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            let visibleCount = 0;
+            
+            recipientItems.forEach(item => {
+                const email = item.getAttribute('data-email') || '';
+                const name = item.getAttribute('data-name') || '';
+                const company = item.getAttribute('data-company') || '';
+                // Extract email domain
+                const emailDomain = email.includes('@') ? email.split('@')[1] : '';
+                
+                const matches = !searchTerm || 
+                    email.includes(searchTerm) || 
+                    name.includes(searchTerm) || 
+                    company.includes(searchTerm) || 
+                    emailDomain.includes(searchTerm);
+                
+                if (matches) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            if (recipientCount) {
+                recipientCount.textContent = visibleCount;
+            }
+            
+            // Update select all checkbox state
+            updateSelectAllState();
+        });
+    }
+    
+    // Select all functionality
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            recipientItems.forEach(item => {
+                if (item.style.display !== 'none') {
+                    const checkbox = item.querySelector('.recipient-checkbox');
+                    if (checkbox) {
+                        checkbox.checked = isChecked;
+                    }
+                }
+            });
+        });
+    }
+    
+    // Update select all checkbox when individual checkboxes change
+    recipientCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectAllState();
+        });
+    });
+    
+    function updateSelectAllState() {
+        if (!selectAllCheckbox) return;
+        
+        const visibleItems = Array.from(recipientItems).filter(item => item.style.display !== 'none');
+        const visibleCheckboxes = visibleItems.map(item => item.querySelector('.recipient-checkbox')).filter(cb => cb);
+        const checkedCount = visibleCheckboxes.filter(cb => cb.checked).length;
+        
+        if (visibleCheckboxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+        } else if (checkedCount === visibleCheckboxes.length) {
+            selectAllCheckbox.checked = true;
+            selectAllCheckbox.indeterminate = false;
+        } else if (checkedCount > 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = true;
+        } else {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+        }
+    }
+    
+    // Initial state update
+    updateSelectAllState();
+    
+    // Pre-fill variable mappings if copying campaign
+    {% if original_campaign and variable_mappings_json %}
+    const variableMappings = {{ variable_mappings_json|safe }};
+    Object.keys(variableMappings).forEach(varName => {
+        const mappingValue = variableMappings[varName];
+        const select = document.getElementById('var_' + varName);
+        const customInput = document.getElementById('var_' + varName + '_custom');
+        
+        if (select && mappingValue) {
+            if (mappingValue.startsWith('recipient.')) {
+                select.value = mappingValue;
+            } else {
+                select.value = '__custom__';
+                if (customInput) {
+                    customInput.value = mappingValue;
+                    customInput.classList.remove('d-none');
+                    customInput.required = true;
+                }
+            }
+            // Trigger change event to update UI
+            select.dispatchEvent(new Event('change'));
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}
+
+
+
+

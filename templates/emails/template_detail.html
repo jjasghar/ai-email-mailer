@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}{{ template.name }} - AI Email Mailer{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{ template.name }}{% if template.is_default %} <span class="badge bg-success ms-2">Default</span>{% endif %}</h1>
+    <div>
+        <a href="{% url 'template_edit' template.pk %}" class="btn btn-secondary">Edit</a>
+        <a href="{% url 'template_delete' template.pk %}" class="btn btn-danger">Delete</a>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">Header Preview</h5>
+        {% if template.header_html %}
+        <div class="border rounded p-3 bg-white">
+            {{ template.header_html|safe }}
+        </div>
+        {% else %}
+        <p class="text-muted">No header content</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">Footer Preview</h5>
+        {% if template.footer_html %}
+        <div class="border rounded p-3 bg-white">
+            {{ template.footer_html|safe }}
+        </div>
+        {% else %}
+        <p class="text-muted">No footer content</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Raw HTML</h5>
+        <h6>Header</h6>
+        <pre class="bg-light p-3 rounded mb-3"><code>{% if template.header_html %}{{ template.header_html }}{% else %}(empty){% endif %}</code></pre>
+        <h6>Footer</h6>
+        <pre class="bg-light p-3 rounded"><code>{% if template.footer_html %}{{ template.footer_html }}{% else %}(empty){% endif %}</code></pre>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'template_list' %}" class="btn btn-secondary">Back to List</a>
+</div>
+{% endblock %}
+
+
+
+

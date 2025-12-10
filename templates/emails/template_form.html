@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{% if template %}Edit{% else %}Create{% endif %} Template - AI Email Mailer{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{% if template %}Edit Template{% else %}Create New Template{% endif %}</h1>
+
+<div class="card">
+    <div class="card-body">
+        <p class="card-text">Create an HTML template with header and footer. The main email content (from seed email, rewritten by AI) will be inserted between them.</p>
+        
+        <form method="post" class="mt-4">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="name" class="form-label">Template Name</label>
+                <input type="text" class="form-control" id="name" name="name" value="{% if template %}{{ template.name }}{% endif %}" required>
+            </div>
+            
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="is_default" name="is_default" {% if template and template.is_default %}checked{% endif %}>
+                <label class="form-check-label" for="is_default">
+                    Set as default template
+                </label>
+            </div>
+            
+            <h5 class="mt-4 mb-3">Header HTML</h5>
+            <div class="mb-3">
+                <label for="header_html" class="form-label">Header HTML</label>
+                <textarea class="form-control font-monospace" id="header_html" name="header_html" rows="8">{% if template %}{{ template.header_html }}{% endif %}</textarea>
+                <div class="form-text">HTML content that appears at the top of the email (e.g., logo, navigation)</div>
+            </div>
+            
+            <h5 class="mt-4 mb-3">Footer HTML</h5>
+            <div class="mb-3">
+                <label for="footer_html" class="form-label">Footer HTML</label>
+                <textarea class="form-control font-monospace" id="footer_html" name="footer_html" rows="8">{% if template %}{{ template.footer_html }}{% endif %}</textarea>
+                <div class="form-text">HTML content that appears at the bottom of the email (e.g., unsubscribe link, company info)</div>
+            </div>
+            
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-success">{% if template %}Update{% else %}Create{% endif %} Template</button>
+                <a href="{% if template %}{% url 'template_detail' template.pk %}{% else %}{% url 'template_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+
+

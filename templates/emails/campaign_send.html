@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Send Campaign - AI Email Mailer{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Send Campaign: {{ campaign.title }}</h1>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Confirm Send</h5>
+        <p>This will send unique AI-rewritten emails to <strong>{{ campaign.recipients.count }}</strong> recipient(s).</p>
+        <p class="text-muted">Each recipient will receive a personalized version of the seed email, rewritten by Ollama.</p>
+        
+        <form method="post" class="mt-4">
+            {% csrf_token %}
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">Yes, Send Campaign</button>
+                <a href="{% url 'campaign_detail' campaign.pk %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+
+

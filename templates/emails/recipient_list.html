@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Recipients - AI Email Mailer{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Recipients</h1>
+    <a href="{% url 'recipient_add' %}" class="btn btn-primary">Add Recipients</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <p class="card-text">Manage your email recipients. You can add them manually or upload a CSV file.</p>
+        
+        {% if page_obj %}
+        <div class="table-responsive mt-3">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Name</th>
+                        <th>Company</th>
+                        <th>Phone</th>
+                        <th>Added</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for recipient in page_obj %}
+                    <tr>
+                        <td>{{ recipient.email }}</td>
+                        <td>{{ recipient.name|default:"-" }}</td>
+                        <td>{{ recipient.company|default:"-" }}</td>
+                        <td>{{ recipient.phone|default:"-" }}</td>
+                        <td>{{ recipient.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'recipient_edit' recipient.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                            <a href="{% url 'recipient_delete' recipient.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <p class="mt-3">No recipients yet. <a href="{% url 'recipient_add' %}" class="btn btn-primary">Add recipients</a>!</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+
+
+

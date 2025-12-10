@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ seed.title }} - AI Email Mailer{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{ seed.title }}</h1>
+    <div>
+        <a href="{% url 'seed_email_edit' seed.pk %}" class="btn btn-secondary">Edit</a>
+        <a href="{% url 'seed_email_delete' seed.pk %}" class="btn btn-danger">Delete</a>
+    </div>
+</div>
+
+{% if seed.description %}
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">Description</h5>
+        <p>{{ seed.description }}</p>
+    </div>
+</div>
+{% endif %}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">Content Preview</h5>
+        <div class="border rounded p-3 bg-white">
+            {{ seed.content_markdown|linebreaks }}
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Raw Markdown</h5>
+        <pre class="bg-light p-3 rounded"><code>{{ seed.content_markdown }}</code></pre>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'seed_email_list' %}" class="btn btn-secondary">Back to List</a>
+</div>
+{% endblock %}
+
+
+
+

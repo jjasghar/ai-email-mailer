@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Seed Email - AI Email Mailer{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Delete Seed Email</h1>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Are you sure?</h5>
+        <p>You are about to delete the seed email: <strong>{{ seed.title }}</strong></p>
+        <p>This action cannot be undone.</p>
+        
+        <form method="post" class="mt-4">
+            {% csrf_token %}
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                <a href="{% url 'seed_email_detail' seed.pk %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+
+

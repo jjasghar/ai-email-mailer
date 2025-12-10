@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AI Email Mailer{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Dashboard</h1>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Seed Emails</h5>
+                <p class="card-text display-4 text-primary">{{ seed_emails|length }}</p>
+                <a href="{% url 'seed_email_list' %}" class="btn btn-primary btn-sm">View All</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Recipients</h5>
+                <p class="card-text display-4 text-success">{{ recipients_count }}</p>
+                <a href="{% url 'recipient_list' %}" class="btn btn-success btn-sm">View All</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Campaigns</h5>
+                <p class="card-text display-4 text-info">{{ campaigns|length }}</p>
+                <a href="{% url 'campaign_list' %}" class="btn btn-info btn-sm">View All</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Recent Campaigns</h5>
+                {% if campaigns %}
+                <ul class="list-group list-group-flush">
+                    {% for campaign in campaigns %}
+                    <li class="list-group-item">
+                        <a href="{% url 'campaign_detail' campaign.pk %}">{{ campaign.title }}</a>
+                        <span class="badge bg-secondary float-end">{{ campaign.get_status_display }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p>No campaigns yet. <a href="{% url 'campaign_create' %}">Create your first campaign</a>!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Quick Actions</h5>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'seed_email_create' %}" class="btn btn-primary">Create Seed Email</a>
+                    <a href="{% url 'template_create' %}" class="btn btn-secondary">Create Template</a>
+                    <a href="{% url 'recipient_add' %}" class="btn btn-success">Add Recipients</a>
+                    <a href="{% url 'campaign_create' %}" class="btn btn-info">Create Campaign</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+

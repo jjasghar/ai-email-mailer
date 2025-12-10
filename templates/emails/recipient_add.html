@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Add Recipients - AI Email Mailer{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Add Recipients</h1>
+
+<div class="card">
+    <div class="card-body">
+        <p class="card-text">Add recipients by uploading a CSV file or entering email addresses manually.</p>
+        
+        <form method="post" enctype="multipart/form-data" class="mt-4">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <h5 class="mb-3">Option 1: Upload CSV File</h5>
+                <div class="mb-3">
+                    <label for="csv_file" class="form-label">CSV File</label>
+                    <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv">
+                    <div class="form-text">CSV format: email,name,company,phone (one per line). Name, company, and phone are optional.</div>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="mb-4">
+                <h5 class="mb-3">Option 2: Enter Manually</h5>
+                <div class="mb-3">
+                    <label for="emails" class="form-label">Email Addresses</label>
+                    <textarea class="form-control font-monospace" id="emails" name="emails" rows="10" placeholder="email1@example.com&#10;email2@example.com&#10;email3@example.com"></textarea>
+                    <div class="form-text">One email address per line</div>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Add Recipients</button>
+                <a href="{% url 'recipient_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

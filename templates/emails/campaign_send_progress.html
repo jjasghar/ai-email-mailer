@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Sending Campaign - AI Email Mailer{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Sending Campaign: {{ campaign.title }}</h1>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Sending Progress</h5>
+        
+        <div id="progress-container">
+            <div class="mb-3">
+                <div class="d-flex justify-content-between mb-2">
+                    <span id="status-text">Initializing...</span>
+                    <span id="progress-text">0 / {{ campaign.recipients.count }}</span>
+                </div>
+                <div class="progress" style="height: 30px;">
+                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" 
+                         role="progressbar" 
+                         style="width: 0%"
+                         aria-valuenow="0" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                        <span id="progress-percentage">0%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <p class="text-muted mb-1"><strong>Currently processing:</strong></p>
+                <p id="current-email" class="font-monospace">Preparing to send...</p>
+            </div>
+            
+            <div class="alert alert-info">
+                <small>Please keep this page open while the campaign is being sent. You will be redirected automatically when complete.</small>
+            </div>
+            
+            <div id="completion-message" class="alert alert-success d-none">
+                <h5>Campaign Sent Successfully!</h5>
+                <p id="completion-details"></p>
+                <a href="{% url 'campaign_detail' campaign.pk %}" class="btn btn-primary">View Campaign</a>
+            </div>
+            
+            <div id="error-message" class="alert alert-danger d-none">
+                <h5>Error Sending Campaign</h5>
+                <p id="error-details"></p>
+                <a href="{% url 'campaign_detail' campaign.pk %}" class="btn btn-secondary">Back to Campaign</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let pollInterval;
+let isComplete = false;
+
+function updateProgress() {
+    fetch('{% url "campaign_send_progress_api" campaign.pk %}')
+        .then(response => response.json())
+        .then(data => {
+            const progressBar = document.getElementById('progress-bar');
+            const progressPercentage = document.getElementById('progress-percentage');
+            const progressText = document.getElementById('progress-text');
+            const statusText = document.getElementById('status-text');
+            const currentEmail = document.getElementById('current-email');
+            const completionMessage = document.getElementById('completion-message');
+            const completionDetails = document.getElementById('completion-details');
+            
+            // Update progress bar
+            const percentage = data.percentage || 0;
+            progressBar.style.width = percentage + '%';
+            progressBar.setAttribute('aria-valuenow', percentage);
+            progressPercentage.textContent = percentage + '%';
+            
+            // Update text
+            progressText.textContent = `${data.progress || 0} / ${data.total || 0}`;
+            
+            // Update status
+            if (data.status === 'sending') {
+                statusText.textContent = 'Sending emails...';
+                if (data.current_email) {
+                    currentEmail.textContent = data.current_email;
+                } else {
+                    currentEmail.textContent = 'Preparing...';
+                }
+            } else if (data.status === 'sent') {
+                statusText.textContent = 'Complete!';
+                currentEmail.textContent = 'All emails sent';
+            } else {
+                statusText.textContent = 'Status: ' + data.status;
+            }
+            
+            // Check if complete
+            if (data.is_complete && !isComplete) {
+                isComplete = true;
+                clearInterval(pollInterval);
+                progressBar.classList.remove('progress-bar-animated');
+                progressBar.classList.add('bg-success');
+                completionMessage.classList.remove('d-none');
+                completionDetails.textContent = `Successfully sent ${data.progress} email(s).`;
+                
+                // Redirect after 3 seconds
+                setTimeout(() => {
+                    window.location.href = '{% url "campaign_detail" campaign.pk %}';
+                }, 3000);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching progress:', error);
+            const errorMessage = document.getElementById('error-message');
+            const errorDetails = document.getElementById('error-details');
+            errorMessage.classList.remove('d-none');
+            errorDetails.textContent = 'Unable to fetch progress updates. Please check the campaign status.';
+            clearInterval(pollInterval);
+        });
+}
+
+// Start polling
+pollInterval = setInterval(updateProgress, 1000); // Poll every second
+updateProgress(); // Initial update
+
+// Clean up on page unload
+window.addEventListener('beforeunload', () => {
+    if (pollInterval) {
+        clearInterval(pollInterval);
+    }
+});
+</script>
+{% endblock %}
+
